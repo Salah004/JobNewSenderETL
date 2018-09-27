@@ -11,11 +11,26 @@
   DTS:LocaleID="1036"
   DTS:ObjectName="Package"
   DTS:PackageType="5"
-  DTS:VersionBuild="9"
-  DTS:VersionGUID="{8A84E802-C28B-442E-99E1-084FA2E25D67}">
+  DTS:VersionBuild="18"
+  DTS:VersionGUID="{4C661101-457C-49F0-A2BC-CEF9609C1568}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[10.16.100.183.Anem]"
+      DTS:CreationName="OLEDB"
+      DTS:DTSID="{59B4D915-BEA7-4F4B-8615-9AAB7871E238}"
+      DTS:ObjectName="10.16.100.183.Anem">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectionString="Data Source=10.16.100.183;User ID=AnemUser;Initial Catalog=Anem;Provider=SQLNCLI11.1;Auto Translate=False;">
+          <DTS:Password
+            DTS:Name="Password"
+            Sensitive="1"
+            Encrypted="1">AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAuTLHUGG0L0eQqq7KkwsXaAAAAAAIAAAARABUAFMAAAAQZgAAAAEAACAAAAAbFnd0m2mt0GTLDsjwWnUiiRiDjQeRpoQtc86Vlf+YGwAAAAAOgAAAAAIAACAAAAD3ONZwQf+/GtnlqtHVYLD8lKXwHzw8oRAMu6wcQCw9+SAAAAAO4rgNBO9K9hCjNOgTty5L3COQJvc4D3yhZg1fPGi+akAAAADMZLR5UDYB8+T39gM26VKIXDXcvUbKTFn+6lLgukeoqoSubVSlXcFdolOoUehBZb4gMNe7SHPORaVmsT2D6jRJ</DTS:Password>
+        </DTS:ConnectionManager>
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
     <DTS:ConnectionManager
       DTS:refId="Package.ConnectionManagers[HTTP Connection Manager]"
       DTS:CreationName="HTTP (KingswaySoft)"
@@ -58,7 +73,742 @@
                   name="SourceCode"
                   state="cdata">
                   <arrayElements
-                    arrayElementCount="0" />
+                    arrayElementCount="33">
+                    <arrayElement
+                      dataType="System.String"><![CDATA[main.cs]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[UTF8]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[#region Help:  Introduction to the Script Component
+/* The Script Component allows you to perform virtually any operation that can be accomplished in
+ * a .Net application within the context of an Integration Services data flow.
+ *
+ * Expand the other regions which have "Help" prefixes for examples of specific ways to use
+ * Integration Services features within this script component. */
+#endregion
+
+#region Namespaces
+using System;
+using System.Data;
+using Elasticsearch.Net;
+using Microsoft.SqlServer.Dts.Pipeline.Wrapper;
+using Microsoft.SqlServer.Dts.Runtime.Wrapper;
+using Newtonsoft.Json.Linq;
+#endregion
+
+/// <summary>
+/// This is the class to which to add your code.  Do not change the name, attributes, or parent
+/// of this class.
+/// </summary>
+[Microsoft.SqlServer.Dts.Pipeline.SSISScriptComponentEntryPointAttribute]
+public class ScriptMain : UserComponent
+{
+    #region Help:  Using Integration Services variables and parameters
+    /* To use a variable in this script, first ensure that the variable has been added to
+     * either the list contained in the ReadOnlyVariables property or the list contained in
+     * the ReadWriteVariables property of this script component, according to whether or not your
+     * code needs to write into the variable.  To do so, save this script, close this instance of
+     * Visual Studio, and update the ReadOnlyVariables and ReadWriteVariables properties in the
+     * Script Transformation Editor window.
+     * To use a parameter in this script, follow the same steps. Parameters are always read-only.
+     *
+     * Example of reading from a variable or parameter:
+     *  DateTime startTime = Variables.MyStartTime;
+     *
+     * Example of writing to a variable:
+     *  Variables.myStringVariable = "new value";
+     */
+    #endregion
+
+    #region Help:  Using Integration Services Connnection Managers
+    /* Some types of connection managers can be used in this script component.  See the help topic
+     * "Working with Connection Managers Programatically" for details.
+     *
+     * To use a connection manager in this script, first ensure that the connection manager has
+     * been added to either the list of connection managers on the Connection Managers page of the
+     * script component editor.  To add the connection manager, save this script, close this instance of
+     * Visual Studio, and add the Connection Manager to the list.
+     *
+     * If the component needs to hold a connection open while processing rows, override the
+     * AcquireConnections and ReleaseConnections methods.
+     * 
+     * Example of using an ADO.Net connection manager to acquire a SqlConnection:
+     *  object rawConnection = Connections.SalesDB.AcquireConnection(transaction);
+     *  SqlConnection salesDBConn = (SqlConnection)rawConnection;
+     *
+     * Example of using a File connection manager to acquire a file path:
+     *  object rawConnection = Connections.Prices_zip.AcquireConnection(transaction);
+     *  string filePath = (string)rawConnection;
+     *
+     * Example of releasing a connection manager:
+     *  Connections.SalesDB.ReleaseConnection(rawConnection);
+     */
+    #endregion
+
+    #region Help:  Firing Integration Services Events
+    /* This script component can fire events.
+     *
+     * Example of firing an error event:
+     *  ComponentMetaData.FireError(10, "Process Values", "Bad value", "", 0, out cancel);
+     *
+     * Example of firing an information event:
+     *  ComponentMetaData.FireInformation(10, "Process Values", "Processing has started", "", 0, fireAgain);
+     *
+     * Example of firing a warning event:
+     *  ComponentMetaData.FireWarning(10, "Process Values", "No rows were received", "", 0);
+     */
+    #endregion
+
+    /// <summary>
+    /// This method is called once, before rows begin to be processed in the data flow.
+    ///
+    /// You can remove this method if you don't need to do anything here.
+    /// </summary>
+    /// 
+    private ElasticLowLevelClient _elasticClient;
+    public override void PreExecute()
+    {
+        base.PreExecute();
+        var connectionConfiguration = new ConnectionConfiguration(new Uri("http://localhost:9200/"));
+        _elasticClient = new ElasticLowLevelClient(connectionConfiguration);
+    }
+
+    /// <summary>
+    /// This method is called after all the rows have passed through this component.
+    ///
+    /// You can delete this method if you don't need to do anything here.
+    /// </summary>
+    public override void PostExecute()
+    {
+        base.PostExecute();
+        /*
+         * Add your code here
+         */
+    }
+
+    /// <summary>
+    /// This method is called once for every row that passes through the component from Entrée0.
+    ///
+    /// Example of reading a value from a column in the the row:
+    ///  string zipCode = Row.ZipCode
+    ///
+    /// Example of writing a value to a column in the row:
+    ///  Row.ZipCode = zipCode
+    /// </summary>
+    /// <param name="Row">The row that is currently passing through the component</param>
+    public override void Entrée0_ProcessInputRow(Entrée0Buffer Row)
+    {
+
+        var id = Row.id.ToString();
+
+        var query = @"
+                    {
+                           ""size"":2,
+                           ""sort"":[
+                              {
+                                 ""TauxRapprochement"":{
+                                    ""order"":""desc""
+                                 }
+                              }
+                           ],
+                           ""query"":{
+                              ""bool"":{
+                                 ""filter"":{
+                                    ""bool"":{
+                                       ""must"":[
+                                          {
+                                             ""term"":{
+                                                ""DemandeurId"":""1995a87f-63f0-4309-a65e-e80756f8602a""
+                                             }
+                                          },
+                                          {
+                                             ""range"":{
+                                                ""TauxRapprochement"":{
+                                                   ""gte"":50
+                                                }
+                                             }
+                                          }
+                                       ]
+                                    }
+                                 }
+                              }
+                           }
+                        }}";
+        var searchResponse = _elasticClient.Search<string>("rapprochements", "rapprochement", query);
+
+        var successful = searchResponse.Success;
+        var responseJson = searchResponse.Body;
+
+        Row.offres.AddBlobData(System.Text.Encoding.UTF8.GetBytes(responseJson));
+       
+    }
+
+
+}
+]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[SC_2206eb09e9df428fb0edf46ec965b0f7.csproj]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[UTF8]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectTypeGuids>{30D016F9-3734-4E33-A861-5E7D899E18F3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{7C2B143E-FD1F-490C-B513-673B0F0C25C9}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SC_2206eb09e9df428fb0edf46ec965b0f7</RootNamespace>
+    <AssemblyName>SC_2206eb09e9df428fb0edf46ec965b0f7</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>true</ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>.\bin\Debug\</OutputPath>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>false</DebugSymbols>
+    <Optimize>true</Optimize>
+    <OutputPath>.\bin\Release\</OutputPath>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Elasticsearch.Net, Version=5.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d, processorArchitecture=MSIL">
+      <HintPath>C:\Users\ABBOUD Echeikh Bakir\AppData\Local\Temp\Vsta\SSIS_SC140\VstazoUpCjXvL0CdGrV5RMFDJA\packages\Elasticsearch.Net.5.6.2\lib\net45\Elasticsearch.Net.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>C:\Users\s.lachi\AppData\Local\Temp\Vsta\SSIS_SC140\Vsta__fQDKnQ9p0S7tU_ZhXrVxQ\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Microsoft.SqlServer.TxScript, Version=14.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
+    <Reference Include="Microsoft.SqlServer.DTSRuntimeWrap, Version=14.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
+    <Reference Include="Microsoft.SqlServer.DTSPipelineWrap, Version=14.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
+    <Reference Include="Microsoft.SqlServer.PipelineHost, Version=14.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
+    <Compile Include="main.cs" />
+    <Compile Include="BufferWrapper.cs" />
+    <Compile Include="ComponentWrapper.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <AppDesigner Include="Properties\" />
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <!-- Include the build rules for a C# project.-->
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- This section defines VSTA properties that describe the host-changable project properties. -->
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{30D016F9-3734-4E33-A861-5E7D899E18F3}">
+        <ProjectProperties HostName="VSTAHostName" HostPackage="{B3A685AA-7EAF-4BC6-9940-57959FA5AC07}" ApplicationType="usd" Language="cs" TemplatesPath="" />
+        <Host Name="ScriptComponent" IconIndex="0" />
+        <ProjectClient>
+          <HostIdentifier>SSIS_SC140</HostIdentifier>
+        </ProjectClient>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[Properties\Resources.resx]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[UTF8]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+</root>]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[BufferWrapper.cs]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[UTF8]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[/* THIS IS AUTO-GENERATED CODE THAT WILL BE OVERWRITTEN! DO NOT EDIT!
+*  Microsoft SQL Server Integration Services buffer wrappers
+*  This module defines classes for accessing data flow buffers
+*  THIS IS AUTO-GENERATED CODE THAT WILL BE OVERWRITTEN! DO NOT EDIT! */
+
+
+
+using System;
+using System.Data;
+using Microsoft.SqlServer.Dts.Pipeline;
+using Microsoft.SqlServer.Dts.Pipeline.Wrapper;
+
+public class Entrée0Buffer: ScriptBuffer
+
+{
+    public Entrée0Buffer(PipelineBuffer Buffer, int[] BufferColumnIndexes, OutputNameMap OutputMap)
+        : base(Buffer, BufferColumnIndexes, OutputMap)
+    {
+    }
+
+    public String id
+    {
+        get
+        {
+            return Buffer.GetString(BufferColumnIndexes[0]);
+        }
+    }
+    public bool id_IsNull
+    {
+        get
+        {
+            return IsNull(0);
+        }
+    }
+
+    public BlobColumn offres
+    {
+        get
+        {
+            return (BlobColumn)Buffer[BufferColumnIndexes[1]];
+        }
+        set
+        {
+            this[1] = value;
+        }
+    }
+    public bool offres_IsNull
+    {
+        get
+        {
+            return IsNull(1);
+        }
+        set
+        {
+            if (value)
+            {
+                SetNull(1);
+            }
+            else
+            {
+                throw new InvalidOperationException("La propriété IsNull ne peut pas prendre la valeur False. Affectez plutôt une valeur à la colonne.");
+            }
+        }
+    }
+
+    new public bool NextRow()
+    {
+        return base.NextRow();
+    }
+
+    new public bool EndOfRowset()
+    {
+        return base.EndOfRowset();
+    }
+
+}
+]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[Properties\Settings.Designer.cs]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[UTF8]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="SC_2206eb09e9df428fb0edf46ec965b0f7.Properties.Settings.get_Default():SC_2206eb09e9df428fb0edf46ec965b0f7.Properties.Sett" +
+    "ings")]
+
+namespace SC_2206eb09e9df428fb0edf46ec965b0f7.Properties {
+    
+    
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
+        
+        [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+        private static Settings defaultInstance = new Settings();
+        
+        public static Settings Default {
+            get {
+                return defaultInstance;
+            }
+        }
+    }
+}
+]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[ComponentWrapper.cs]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[UTF8]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[/* THIS IS AUTO-GENERATED CODE THAT WILL BE OVERWRITTEN! DO NOT EDIT!
+*  Microsoft SQL Server Integration Services component wrapper
+*  This module defines the base class for your component
+*  THIS IS AUTO-GENERATED CODE THAT WILL BE OVERWRITTEN! DO NOT EDIT! */
+
+using System;
+using System.Data;
+using Microsoft.SqlServer.Dts.Pipeline;
+using Microsoft.SqlServer.Dts.Pipeline.Wrapper;
+using Microsoft.SqlServer.Dts.Runtime.Wrapper;
+
+public class UserComponent: ScriptComponent
+{
+    public Connections Connections;
+    public Variables Variables;
+    public UserComponent()
+    {
+        Connections = new Connections(this);
+        Variables = new Variables(this);
+    }
+
+    public override void ProcessInput(int InputID, string InputName, PipelineBuffer Buffer, OutputNameMap OutputMap)
+    {
+
+        if (InputName.Equals(@"Entrée 0", StringComparison.Ordinal))
+        {
+            Entrée0_ProcessInput(new Entrée0Buffer(Buffer, GetColumnIndexes(InputID), OutputMap));
+        }
+
+    }
+
+    public virtual void Entrée0_ProcessInput(Entrée0Buffer Buffer)
+    {
+        while (Buffer.NextRow())
+        {
+            Entrée0_ProcessInputRow(Buffer);
+        }
+    }
+
+    public virtual void Entrée0_ProcessInputRow(Entrée0Buffer Row)
+    {
+    }
+
+}
+
+public class Connections
+{
+    ScriptComponent ParentComponent;
+
+    public Connections(ScriptComponent Component)
+    {
+        ParentComponent = Component;
+    }
+
+}
+
+public class Variables
+{
+    ScriptComponent ParentComponent;
+
+    public Variables(ScriptComponent Component)
+    {
+        ParentComponent = Component;
+    }
+
+}
+]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[packages.config]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[UTF8]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[<?xml version="1.0" encoding="utf-8"?>
+<packages>
+  <package id="Newtonsoft.Json" version="11.0.2" targetFramework="net45" />
+</packages>]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[Project]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[UTF16LE]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[<?xml version="1.0" encoding="UTF-16" standalone="yes"?>
+<c:Project xmlns:c="http://schemas.microsoft.com/codeprojectml/2010/08/main" xmlns:msb="http://schemas.microsoft.com/developer/msbuild/2003" runtimeVersion="4.0" schemaVersion="1.0">
+  <msb:PropertyGroup>
+    <msb:CodeName>SC_2206eb09e9df428fb0edf46ec965b0f7</msb:CodeName>
+    <msb:Language>msBuild</msb:Language>
+    <msb:DisplayName>SC_2206eb09e9df428fb0edf46ec965b0f7</msb:DisplayName>
+    <msb:ProjectId>{2C8D3788-EF08-4586-8297-621D21B6EF60}</msb:ProjectId>
+  </msb:PropertyGroup>
+  <msb:ItemGroup>
+    <msb:Project Include="SC_2206eb09e9df428fb0edf46ec965b0f7.csproj" />
+    <msb:File Include="packages.config" />
+    <msb:File Include="main.cs" />
+    <msb:File Include="BufferWrapper.cs" />
+    <msb:File Include="ComponentWrapper.cs" />
+    <msb:File Include="Properties\Settings.settings" />
+    <msb:File Include="Properties\AssemblyInfo.cs" />
+    <msb:File Include="Properties\Resources.resx" />
+    <msb:File Include="Properties\Resources.Designer.cs" />
+    <msb:File Include="Properties\Settings.Designer.cs" />
+  </msb:ItemGroup>
+</c:Project>]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[Properties\AssemblyInfo.cs]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[UTF8]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[using System.Reflection;
+using System.Runtime.CompilerServices;
+
+//
+// General Information about an assembly is controlled through the following 
+// set of attributes. Change these attribute values to modify the information
+// associated with an assembly.
+//
+[assembly: AssemblyTitle("SC_2206eb09e9df428fb0edf46ec965b0f7")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("SC_2206eb09e9df428fb0edf46ec965b0f7")]
+[assembly: AssemblyCopyright("Copyright @  2018")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+//
+// Version information for an assembly consists of the following four values:
+//
+//      Major Version
+//      Minor Version 
+//      Build Number
+//      Revision
+//
+// You can specify all the values or you can default the Revision and Build Numbers 
+// by using the '*' as shown below:
+
+[assembly: AssemblyVersion("1.0.0.0")]
+]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[Properties\Settings.settings]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[UTF8]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[<?xml version='1.0' encoding='iso-8859-1'?>
+<SettingsFile xmlns="uri:settings" CurrentProfile="(Default)">
+  <Profiles>
+    <Profile Name="(Default)" />
+  </Profiles>
+  <Settings />
+</SettingsFile>]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[Properties\Resources.Designer.cs]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[UTF8]]></arrayElement>
+                    <arrayElement
+                      dataType="System.String"><![CDATA[//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="SC_2206eb09e9df428fb0edf46ec965b0f7.Properties.Resources.get_ResourceManager():System.Resources.Resou" +
+    "rceManager")]
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="SC_2206eb09e9df428fb0edf46ec965b0f7.Properties.Resources.get_Culture():System.Globalization.CultureIn" +
+    "fo")]
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="SC_2206eb09e9df428fb0edf46ec965b0f7.Properties.Resources.set_Culture(System.Globalization.CultureInfo" +
+    "):Void")]
+
+namespace SC_2206eb09e9df428fb0edf46ec965b0f7.Properties {
+    
+    
+    /// <summary>
+    ///   A strongly-typed resource class, for looking up localized strings, etc.
+    /// </summary>
+    // This class was auto-generated by the StronglyTypedResourceBuilder
+    // class via a tool like ResGen or Visual Studio.
+    // To add or remove a member, edit your .ResX file then rerun ResGen
+    // with the /str option, or rebuild your VS project.
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+    internal class Resources {
+        
+        private static global::System.Resources.ResourceManager resourceMan;
+        
+        private static global::System.Globalization.CultureInfo resourceCulture;
+        
+        [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        internal Resources() {
+        }
+        
+        /// <summary>
+        ///   Returns the cached ResourceManager instance used by this class.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Resources.ResourceManager ResourceManager {
+            get {
+                if ((resourceMan == null)) {
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("SC_2206eb09e9df428fb0edf46ec965b0f7.Properties.Resources", typeof(Resources).Assembly);
+                    resourceMan = temp;
+                }
+                return resourceMan;
+            }
+        }
+        
+        /// <summary>
+        ///   Overrides the current thread's CurrentUICulture property for all
+        ///   resource lookups using this strongly typed resource class.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Globalization.CultureInfo Culture {
+            get {
+                return resourceCulture;
+            }
+            set {
+                resourceCulture = value;
+            }
+        }
+    }
+}
+]]></arrayElement>
+                  </arrayElements>
                 </property>
                 <property
                   dataType="System.String"
@@ -73,7 +823,7 @@
                   dataType="System.String"
                   description="Spécifie le nom du projet Microsoft Visual Studio Tools for Applications. Les noms des projets doivent être uniques dans un package."
                   name="VSTAProjectName"
-                  typeConverter="NOTBROWSABLE">SC_a3bdd98ee9314166b0e4110bb84467c2</property>
+                  typeConverter="NOTBROWSABLE">SC_2206eb09e9df428fb0edf46ec965b0f7</property>
                 <property
                   dataType="System.String"
                   description="Spécifie le langage de programmation utilisé par le script."
@@ -102,7 +852,7 @@
                   dataType="System.String"
                   description="Somme de contrôle pour faire correspondre les métadonnées de composant avec les codes compilés."
                   name="MetadataChecksum140"
-                  typeConverter="NOTBROWSABLE"></property>
+                  typeConverter="NOTBROWSABLE">01</property>
                 <property
                   dataType="System.String"
                   name="UserComponentTypeName">Microsoft.ScriptComponentHost</property>
@@ -114,1232 +864,152 @@
                   name="Entrée 0">
                   <inputColumns>
                     <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.CategorieContratAr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.CategorieContratAr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CategorieContratAr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.CategorieContratFr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.CategorieContratFr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CategorieContratFr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.CommuneAr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.CommuneAr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CommuneAr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.CommuneFr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.CommuneFr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CommuneFr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.DateInscription]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.DateInscription"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DateInscription]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.DemandeurId]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.DemandeurId"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DemandeurId]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.DispositifAr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.DispositifAr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DispositifAr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.DispositifFr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.DispositifFr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DispositifFr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.Email]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.Email"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.Email]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.Experience]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.Experience"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.Experience]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.MetierAr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.MetierAr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.MetierAr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.MetierFr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.MetierFr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.MetierFr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NiveauInstructionAr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.NiveauInstructionAr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauInstructionAr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NiveauInstructionFr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.NiveauInstructionFr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauInstructionFr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NiveauQualificationAr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.NiveauQualificationAr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauQualificationAr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NiveauQualificationFr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.NiveauQualificationFr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauQualificationFr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NomAr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.NomAr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NomAr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NomFr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.NomFr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NomFr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NombreCandidats]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.NombreCandidats"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NombreCandidats]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NombrePlacesLibres]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.NombrePlacesLibres"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NombrePlacesLibres]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NombrePostesCree]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.NombrePostesCree"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NombrePostesCree]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.OffreId]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.OffreId"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.OffreId]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.PrenomAr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.PrenomAr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.PrenomAr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.PrenomFr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.PrenomFr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.PrenomFr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.RaisonSociale]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.RaisonSociale"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.RaisonSociale]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.RapprochementId]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.RapprochementId"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.RapprochementId]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.TauxRapprochement]"
-                      cachedDataType="r8"
-                      cachedName="_source.TauxRapprochement"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.TauxRapprochement]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.TypeContratAr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.TypeContratAr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.TypeContratAr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.TypeContratFr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.TypeContratFr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.TypeContratFr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.WilayaAr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.WilayaAr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.WilayaAr]" />
-                    <inputColumn
-                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.WilayaFr]"
-                      cachedDataType="wstr"
-                      cachedLength="100"
-                      cachedName="_source.WilayaFr"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.WilayaFr]" />
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[id]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="36"
+                      cachedName="id"
+                      lineageId="Package\Tâche de flux de données\Source OLE DB.Outputs[Sortie de source OLE DB].Columns[id]" />
                   </inputColumns>
                   <externalMetadataColumns />
                 </input>
               </inputs>
+              <outputs>
+                <output
+                  refId="Package\Tâche de flux de données\Composant Script.Outputs[Sortie 0]"
+                  name="Sortie 0"
+                  synchronousInputId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Outputs[Sortie 0].Columns[offres]"
+                      codePage="1252"
+                      dataType="text"
+                      lineageId="Package\Tâche de flux de données\Composant Script.Outputs[Sortie 0].Columns[offres]"
+                      name="offres" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
             </component>
             <component
-              refId="Package\Tâche de flux de données\JSON Source"
-              componentClassID="Microsoft.ManagedComponentHost"
-              contactInfo="KingswaySoft Inc.; http://www.kingswaysoft.com; support@kingswaysoft.com; Copyright (c) 2011-2018 KingswaySoft Inc."
-              description="Retrieves JSON documents and extracts them into columns."
-              name="JSON Source"
+              refId="Package\Tâche de flux de données\Source OLE DB"
+              componentClassID="Microsoft.OLEDBSource"
+              contactInfo="Source OLE DB;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; Tous droits réservés; http://www.microsoft.com/sql/support;7"
+              description="Source OLE DB"
+              name="Source OLE DB"
               usesDispositions="true"
-              version="2">
+              version="7">
               <properties>
                 <property
-                  dataType="System.String"
-                  description="A list of the output nodes in the Json design that are ignored."
-                  expressionType="Notify"
-                  name="IgnoredOutputs"></property>
+                  dataType="System.Int32"
+                  description="Nombre de secondes avant l'expiration d'une commande.  Une valeur égale à 0 indique un délai d'expiration infini."
+                  name="CommandTimeout">0</property>
                 <property
                   dataType="System.String"
-                  description="The template of the expected incoming Json."
-                  expressionType="Notify"
-                  name="Design">{"jsonName":"$","dataName":"Root","type":"Object","children":[{"jsonName":"took","dataName":"took","type":"Value"},{"jsonName":"timed_out","dataName":"timed_out","type":"Value"},{"jsonName":"_shards","dataName":"","type":"Object","children":[{"jsonName":"total","dataName":"_shards.total","type":"Value"},{"jsonName":"successful","dataName":"_shards.successful","type":"Value"},{"jsonName":"skipped","dataName":"_shards.skipped","type":"Value"},{"jsonName":"failed","dataName":"_shards.failed","type":"Value"}]},{"jsonName":"hits","dataName":"","type":"Object","children":[{"jsonName":"total","dataName":"hits.total","type":"Value"},{"jsonName":"max_score","dataName":"hits.max_score","type":"Value"},{"jsonName":"hits","dataName":"hits","type":"Array","children":[{"jsonName":"_index","dataName":"_index","type":"Value"},{"jsonName":"_type","dataName":"_type","type":"Value"},{"jsonName":"_id","dataName":"_id","type":"Value"},{"jsonName":"_score","dataName":"_score","type":"Value"},{"jsonName":"_source","dataName":"","type":"Object","children":[{"jsonName":"CategorieContratAr","dataName":"_source.CategorieContratAr","type":"Value"},{"jsonName":"CategorieContratFr","dataName":"_source.CategorieContratFr","type":"Value"},{"jsonName":"CommuneAr","dataName":"_source.CommuneAr","type":"Value"},{"jsonName":"CommuneFr","dataName":"_source.CommuneFr","type":"Value"},{"jsonName":"DateInscription","dataName":"_source.DateInscription","type":"Value"},{"jsonName":"DemandeurId","dataName":"_source.DemandeurId","type":"Value"},{"jsonName":"DispositifAr","dataName":"_source.DispositifAr","type":"Value"},{"jsonName":"DispositifFr","dataName":"_source.DispositifFr","type":"Value"},{"jsonName":"Email","dataName":"_source.Email","type":"Value"},{"jsonName":"Experience","dataName":"_source.Experience","type":"Value"},{"jsonName":"MetierAr","dataName":"_source.MetierAr","type":"Value"},{"jsonName":"MetierFr","dataName":"_source.MetierFr","type":"Value"},{"jsonName":"NiveauInstructionAr","dataName":"_source.NiveauInstructionAr","type":"Value"},{"jsonName":"NiveauInstructionFr","dataName":"_source.NiveauInstructionFr","type":"Value"},{"jsonName":"NiveauQualificationAr","dataName":"_source.NiveauQualificationAr","type":"Value"},{"jsonName":"NiveauQualificationFr","dataName":"_source.NiveauQualificationFr","type":"Value"},{"jsonName":"NomAr","dataName":"_source.NomAr","type":"Value"},{"jsonName":"NomFr","dataName":"_source.NomFr","type":"Value"},{"jsonName":"NombreCandidats","dataName":"_source.NombreCandidats","type":"Value"},{"jsonName":"NombrePlacesLibres","dataName":"_source.NombrePlacesLibres","type":"Value"},{"jsonName":"NombrePostesCree","dataName":"_source.NombrePostesCree","type":"Value"},{"jsonName":"OffreId","dataName":"_source.OffreId","type":"Value"},{"jsonName":"PrenomAr","dataName":"_source.PrenomAr","type":"Value"},{"jsonName":"PrenomFr","dataName":"_source.PrenomFr","type":"Value"},{"jsonName":"RaisonSociale","dataName":"_source.RaisonSociale","type":"Value"},{"jsonName":"RapprochementId","dataName":"_source.RapprochementId","type":"Value"},{"jsonName":"TauxRapprochement","dataName":"_source.TauxRapprochement","type":"Value"},{"jsonName":"TypeContratAr","dataName":"_source.TypeContratAr","type":"Value"},{"jsonName":"TypeContratFr","dataName":"_source.TypeContratFr","type":"Value"},{"jsonName":"WilayaAr","dataName":"_source.WilayaAr","type":"Value"},{"jsonName":"WilayaFr","dataName":"_source.WilayaFr","type":"Value"}]}]}]}]}</property>
+                  description="Spécifie le nom de l'objet de base de données utilisé pour ouvrir un ensemble de lignes."
+                  name="OpenRowset"></property>
+                <property
+                  dataType="System.String"
+                  description="Spécifie la variable contenant le nom de l'objet de base de données utilisé pour ouvrir un ensemble de lignes."
+                  name="OpenRowsetVariable"></property>
+                <property
+                  dataType="System.String"
+                  description="Commande SQL à exécuter."
+                  name="SqlCommand"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">select 'b0b0ec62-3b51-4b13-b5d1-a8ffce16d6a9' id</property>
+                <property
+                  dataType="System.String"
+                  description="Variable contenant la commande SQL à exécuter."
+                  name="SqlCommandVariable"></property>
                 <property
                   dataType="System.Int32"
-                  description="Indicates how null values are represented in the incoming JSON."
-                  expressionType="Notify"
-                  name="NullMode"
-                  typeConverter="KingswaySoft.IntegrationToolkit.ProductivityPack.JsonExtractNullMode, KingswaySoft.IntegrationToolkit.ProductivityPack, Version=1.0.2017.0, Culture=neutral, PublicKeyToken=705df8e0751bcea7">0</property>
+                  description="Spécifie la page de codes de la colonne à utiliser lorsque les informations de page de codes ne sont pas disponibles à partir de la source de données."
+                  name="DefaultCodePage">1252</property>
                 <property
-                  dataType="System.String"
-                  description="The relative path of the HTTP request that will be combined with the base path from the connection manager."
-                  expressionType="Notify"
-                  name="RelativePath">{"IsExpression":false,"Value":"rapprochements/_search"}</property>
-                <property
-                  dataType="System.String"
-                  description="The body of the HTTP request."
-                  expressionType="Notify"
-                  name="RequestBody">{"IsExpression":false,"Value":"{\r\n  \"size\": 2,\r\n  \"sort\": [\r\n    {\r\n      \"TauxRapprochement\": {\r\n        \"order\": \"desc\"\r\n      }\r\n    }\r\n  ], \r\n  \"query\": {\r\n    \"bool\": {\r\n      \"filter\": {\r\n        \"bool\": {\r\n          \"must\" : [ \r\n              {\"term\" : {\"DemandeurId\": \"1995a87f-63f0-4309-a65e-e80756f8602a\"}},\r\n              {\"range\" : {\"TauxRapprochement\" : {\"gte\" : 50}}\r\n            }]\r\n        }\r\n      }\r\n    }\r\n  }\r\n}"}</property>
-                <property
-                  dataType="System.String"
-                  description="The headers that will be used in the request."
-                  expressionType="Notify"
-                  name="RequestHeaders">[]</property>
-                <property
-                  dataType="System.String"
-                  description="The query string parameters that will be used in the request."
-                  expressionType="Notify"
-                  name="RequestQueryStringParameters">[]</property>
-                <property
-                  dataType="System.String"
-                  description="The expression that determines if requests should keep being sent."
-                  expressionType="Notify"
-                  name="RequestAgainRule"></property>
-                <property
-                  dataType="System.String"
-                  description="The HTTP Method to use when sending requests."
-                  expressionType="Notify"
-                  name="HttpMethod">POST</property>
-                <property
-                  dataType="System.String"
-                  description="Specifies the path to the Item to get the json document from."
-                  expressionType="Notify"
-                  name="LocalFilePath"></property>
-                <property
-                  dataType="System.String"
-                  description="The encoding that will be used to read the json document."
-                  expressionType="Notify"
-                  name="LocalFileEncoding">Unicode (UTF-8)</property>
+                  dataType="System.Boolean"
+                  description="Force l'utilisation de la valeur de propriété DefaultCodePage lors de la description des données caractères."
+                  name="AlwaysUseDefaultCodePage">false</property>
                 <property
                   dataType="System.Int32"
-                  description="The max number of identical requests that will be before an error is raised."
-                  expressionType="Notify"
-                  name="MaxIdenticalRequests">1</property>
+                  description="Spécifie le mode utilisé pour accéder à la base de données."
+                  name="AccessMode"
+                  typeConverter="AccessMode">2</property>
                 <property
                   dataType="System.String"
-                  name="UserComponentTypeName">KingswaySoft.IntegrationToolkit.ProductivityPack.JsonSourceComponent</property>
+                  description="Mappages entre les paramètres de la commande SQL et les variables."
+                  name="ParameterMapping"></property>
               </properties>
               <connections>
                 <connection
-                  refId="Package\Tâche de flux de données\JSON Source.Connections[HTTP (KingswaySoft)]"
-                  connectionManagerID="Package.ConnectionManagers[HTTP Connection Manager]"
-                  connectionManagerRefId="Package.ConnectionManagers[HTTP Connection Manager]"
-                  description="ProductivityPack"
-                  name="HTTP (KingswaySoft)" />
+                  refId="Package\Tâche de flux de données\Source OLE DB.Connections[OleDbConnection]"
+                  connectionManagerID="Package.ConnectionManagers[10.16.100.183.Anem]"
+                  connectionManagerRefId="Package.ConnectionManagers[10.16.100.183.Anem]"
+                  description="Connexion OLE DB en cours d'exécution utilisée pour accéder à la base de données."
+                  name="OleDbConnection" />
               </connections>
               <outputs>
                 <output
-                  refId="Package\Tâche de flux de données\JSON Source.Outputs[Root]"
-                  name="Root">
-                  <properties>
-                    <property
-                      containsID="true"
-                      dataType="System.Int32"
-                      description="The id of the parent output of this output."
-                      name="ParentId">#{Package\Tâche de flux de données\-1:invalid}</property>
-                    <property
-                      dataType="System.Boolean"
-                      description="Specifies if this is a collection of items (may only be false for the root item)."
-                      name="IsCollection">false</property>
-                    <property
-                      dataType="System.String"
-                      description="The JPath to this output in the Json document."
-                      name="JPath">$</property>
-                    <property
-                      containsID="true"
-                      dataType="System.Boolean"
-                      description="Specifies if the specified output represents an array of objects or an array of values."
-                      name="IsComplex">true</property>
-                    <property
-                      containsID="true"
-                      dataType="System.Int32"
-                      description="The id of the field that contains the fully formed JSON for the current level."
-                      expressionType="Notify"
-                      name="JsonField">#{Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_JSON]}</property>
-                    <property
-                      containsID="true"
-                      dataType="System.Int32"
-                      description="The id of the field that is an auto generated row index."
-                      name="RowIndexField">#{Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_RowIndex]}</property>
-                    <property
-                      containsID="true"
-                      dataType="System.Int32"
-                      description="The key field of this output. Used to show relationship of parent and child outputs."
-                      name="KeyField">#{Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_RowIndex]}</property>
-                    <property
-                      containsID="true"
-                      dataType="System.Int32"
-                      description="The key field of this outputs parent. Used to show relationship of parent and child outputs."
-                      name="ParentKeyField">#{Package\Tâche de flux de données\-1:invalid}</property>
-                  </properties>
+                  refId="Package\Tâche de flux de données\Source OLE DB.Outputs[Sortie de source OLE DB]"
+                  name="Sortie de source OLE DB">
                   <outputColumns>
                     <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[_JSON]"
-                      dataType="nText"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_JSON]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[_JSON]"
-                      name="_JSON" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[_RowIndex]"
-                      dataType="i4"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_RowIndex]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[_RowIndex]"
-                      name="_RowIndex" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[took]"
-                      dataType="i8"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[took]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[took]"
-                      name="took" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[timed_out]"
-                      dataType="bool"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[timed_out]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[timed_out]"
-                      name="timed_out" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[_shards.total]"
-                      dataType="i8"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_shards.total]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[_shards.total]"
-                      name="_shards.total" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[_shards.successful]"
-                      dataType="i8"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_shards.successful]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[_shards.successful]"
-                      name="_shards.successful" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[_shards.skipped]"
-                      dataType="i8"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_shards.skipped]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[_shards.skipped]"
-                      name="_shards.skipped" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[_shards.failed]"
-                      dataType="i8"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_shards.failed]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[_shards.failed]"
-                      name="_shards.failed" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[hits.total]"
-                      dataType="i8"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[hits.total]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[hits.total]"
-                      name="hits.total" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[hits.max_score]"
-                      dataType="r8"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[hits.max_score]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[Root].Columns[hits.max_score]"
-                      name="hits.max_score" />
+                      refId="Package\Tâche de flux de données\Source OLE DB.Outputs[Sortie de source OLE DB].Columns[id]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Tâche de flux de données\Source OLE DB.Outputs[Sortie de source OLE DB].ExternalColumns[id]"
+                      length="36"
+                      lineageId="Package\Tâche de flux de données\Source OLE DB.Outputs[Sortie de source OLE DB].Columns[id]"
+                      name="id"
+                      truncationRowDisposition="FailComponent" />
                   </outputColumns>
-                  <externalMetadataColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
                     <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_JSON]"
-                      dataType="nText"
-                      name="_JSON" />
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_RowIndex]"
-                      dataType="i4"
-                      name="_RowIndex" />
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[took]"
-                      dataType="i8"
-                      name="took">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['took']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[timed_out]"
-                      dataType="bool"
-                      name="timed_out">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['timed_out']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_shards.total]"
-                      dataType="i8"
-                      name="_shards.total">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['_shards']['total']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_shards.successful]"
-                      dataType="i8"
-                      name="_shards.successful">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['_shards']['successful']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_shards.skipped]"
-                      dataType="i8"
-                      name="_shards.skipped">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['_shards']['skipped']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[_shards.failed]"
-                      dataType="i8"
-                      name="_shards.failed">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['_shards']['failed']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[hits.total]"
-                      dataType="i8"
-                      name="hits.total">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['total']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[Root].ExternalColumns[hits.max_score]"
-                      dataType="r8"
-                      name="hits.max_score">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['max_score']</property>
-                      </properties>
-                    </externalMetadataColumn>
+                      refId="Package\Tâche de flux de données\Source OLE DB.Outputs[Sortie de source OLE DB].ExternalColumns[id]"
+                      codePage="1252"
+                      dataType="str"
+                      length="36"
+                      name="id" />
                   </externalMetadataColumns>
                 </output>
                 <output
-                  refId="Package\Tâche de flux de données\JSON Source.Outputs[hits]"
-                  name="hits">
-                  <properties>
-                    <property
-                      containsID="true"
-                      dataType="System.Int32"
-                      description="The id of the parent output of this output."
-                      name="ParentId">#{Package\Tâche de flux de données\JSON Source.Outputs[Root]}</property>
-                    <property
-                      dataType="System.Boolean"
-                      description="Specifies if this is a collection of items (may only be false for the root item)."
-                      name="IsCollection">true</property>
-                    <property
-                      dataType="System.String"
-                      description="The JPath to this output in the Json document."
-                      name="JPath">$['hits']['hits']</property>
-                    <property
-                      containsID="true"
-                      dataType="System.Boolean"
-                      description="Specifies if the specified output represents an array of objects or an array of values."
-                      name="IsComplex">true</property>
-                    <property
-                      containsID="true"
-                      dataType="System.Int32"
-                      description="The id of the field that contains the fully formed JSON for the current level."
-                      expressionType="Notify"
-                      name="JsonField">#{Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_JSON]}</property>
-                    <property
-                      containsID="true"
-                      dataType="System.Int32"
-                      description="The id of the field that is an auto generated row index."
-                      name="RowIndexField">#{Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_RowIndex]}</property>
-                    <property
-                      containsID="true"
-                      dataType="System.Int32"
-                      description="The key field of this output. Used to show relationship of parent and child outputs."
-                      name="KeyField">#{Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_RowIndex]}</property>
-                    <property
-                      containsID="true"
-                      dataType="System.Int32"
-                      description="The key field of this outputs parent. Used to show relationship of parent and child outputs."
-                      name="ParentKeyField">#{Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_ParentKeyField]}</property>
-                  </properties>
+                  refId="Package\Tâche de flux de données\Source OLE DB.Outputs[Sortie d'erreur de source OLE DB]"
+                  isErrorOut="true"
+                  name="Sortie d'erreur de source OLE DB">
                   <outputColumns>
                     <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_JSON]"
-                      dataType="nText"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_JSON]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_JSON]"
-                      name="_JSON" />
+                      refId="Package\Tâche de flux de données\Source OLE DB.Outputs[Sortie d'erreur de source OLE DB].Columns[id]"
+                      codePage="1252"
+                      dataType="str"
+                      length="36"
+                      lineageId="Package\Tâche de flux de données\Source OLE DB.Outputs[Sortie d'erreur de source OLE DB].Columns[id]"
+                      name="id" />
                     <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_RowIndex]"
+                      refId="Package\Tâche de flux de données\Source OLE DB.Outputs[Sortie d'erreur de source OLE DB].Columns[ErrorCode]"
                       dataType="i4"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_RowIndex]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_RowIndex]"
-                      name="_RowIndex" />
+                      lineageId="Package\Tâche de flux de données\Source OLE DB.Outputs[Sortie d'erreur de source OLE DB].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
                     <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_ParentKeyField]"
+                      refId="Package\Tâche de flux de données\Source OLE DB.Outputs[Sortie d'erreur de source OLE DB].Columns[ErrorColumn]"
                       dataType="i4"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_ParentKeyField]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_ParentKeyField]"
-                      name="_ParentKeyField" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_index]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_index]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_index]"
-                      name="_index" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_type]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_type]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_type]"
-                      name="_type" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_id]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_id]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_id]"
-                      name="_id" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_score]"
-                      dataType="r8"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_score]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_score]"
-                      name="_score" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CategorieContratAr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.CategorieContratAr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CategorieContratAr]"
-                      name="_source.CategorieContratAr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CategorieContratFr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.CategorieContratFr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CategorieContratFr]"
-                      name="_source.CategorieContratFr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CommuneAr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.CommuneAr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CommuneAr]"
-                      name="_source.CommuneAr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CommuneFr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.CommuneFr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CommuneFr]"
-                      name="_source.CommuneFr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DateInscription]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.DateInscription]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DateInscription]"
-                      name="_source.DateInscription" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DemandeurId]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.DemandeurId]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DemandeurId]"
-                      name="_source.DemandeurId" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DispositifAr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.DispositifAr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DispositifAr]"
-                      name="_source.DispositifAr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DispositifFr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.DispositifFr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DispositifFr]"
-                      name="_source.DispositifFr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.Email]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.Email]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.Email]"
-                      name="_source.Email" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.Experience]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.Experience]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.Experience]"
-                      name="_source.Experience" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.MetierAr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.MetierAr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.MetierAr]"
-                      name="_source.MetierAr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.MetierFr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.MetierFr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.MetierFr]"
-                      name="_source.MetierFr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauInstructionAr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NiveauInstructionAr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauInstructionAr]"
-                      name="_source.NiveauInstructionAr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauInstructionFr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NiveauInstructionFr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauInstructionFr]"
-                      name="_source.NiveauInstructionFr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauQualificationAr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NiveauQualificationAr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauQualificationAr]"
-                      name="_source.NiveauQualificationAr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauQualificationFr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NiveauQualificationFr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauQualificationFr]"
-                      name="_source.NiveauQualificationFr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NomAr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NomAr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NomAr]"
-                      name="_source.NomAr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NomFr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NomFr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NomFr]"
-                      name="_source.NomFr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NombreCandidats]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NombreCandidats]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NombreCandidats]"
-                      name="_source.NombreCandidats" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NombrePlacesLibres]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NombrePlacesLibres]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NombrePlacesLibres]"
-                      name="_source.NombrePlacesLibres" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NombrePostesCree]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NombrePostesCree]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NombrePostesCree]"
-                      name="_source.NombrePostesCree" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.OffreId]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.OffreId]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.OffreId]"
-                      name="_source.OffreId" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.PrenomAr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.PrenomAr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.PrenomAr]"
-                      name="_source.PrenomAr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.PrenomFr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.PrenomFr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.PrenomFr]"
-                      name="_source.PrenomFr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.RaisonSociale]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.RaisonSociale]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.RaisonSociale]"
-                      name="_source.RaisonSociale" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.RapprochementId]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.RapprochementId]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.RapprochementId]"
-                      name="_source.RapprochementId" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.TauxRapprochement]"
-                      dataType="r8"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.TauxRapprochement]"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.TauxRapprochement]"
-                      name="_source.TauxRapprochement" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.TypeContratAr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.TypeContratAr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.TypeContratAr]"
-                      name="_source.TypeContratAr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.TypeContratFr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.TypeContratFr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.TypeContratFr]"
-                      name="_source.TypeContratFr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.WilayaAr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.WilayaAr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.WilayaAr]"
-                      name="_source.WilayaAr" />
-                    <outputColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.WilayaFr]"
-                      dataType="wstr"
-                      externalMetadataColumnId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.WilayaFr]"
-                      length="100"
-                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.WilayaFr]"
-                      name="_source.WilayaFr" />
+                      lineageId="Package\Tâche de flux de données\Source OLE DB.Outputs[Sortie d'erreur de source OLE DB].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
                   </outputColumns>
-                  <externalMetadataColumns>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_JSON]"
-                      dataType="nText"
-                      name="_JSON" />
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_RowIndex]"
-                      dataType="i4"
-                      name="_RowIndex" />
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_ParentKeyField]"
-                      dataType="i4"
-                      name="_ParentKeyField" />
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_index]"
-                      dataType="wstr"
-                      length="100"
-                      name="_index">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_index']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_type]"
-                      dataType="wstr"
-                      length="100"
-                      name="_type">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_type']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_id]"
-                      dataType="wstr"
-                      length="100"
-                      name="_id">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_id']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_score]"
-                      dataType="r8"
-                      name="_score">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_score']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.CategorieContratAr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.CategorieContratAr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['CategorieContratAr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.CategorieContratFr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.CategorieContratFr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['CategorieContratFr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.CommuneAr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.CommuneAr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['CommuneAr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.CommuneFr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.CommuneFr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['CommuneFr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.DateInscription]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.DateInscription">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['DateInscription']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.DemandeurId]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.DemandeurId">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['DemandeurId']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.DispositifAr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.DispositifAr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['DispositifAr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.DispositifFr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.DispositifFr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['DispositifFr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.Email]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.Email">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['Email']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.Experience]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.Experience">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['Experience']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.MetierAr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.MetierAr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['MetierAr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.MetierFr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.MetierFr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['MetierFr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NiveauInstructionAr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.NiveauInstructionAr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['NiveauInstructionAr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NiveauInstructionFr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.NiveauInstructionFr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['NiveauInstructionFr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NiveauQualificationAr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.NiveauQualificationAr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['NiveauQualificationAr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NiveauQualificationFr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.NiveauQualificationFr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['NiveauQualificationFr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NomAr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.NomAr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['NomAr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NomFr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.NomFr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['NomFr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NombreCandidats]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.NombreCandidats">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['NombreCandidats']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NombrePlacesLibres]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.NombrePlacesLibres">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['NombrePlacesLibres']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.NombrePostesCree]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.NombrePostesCree">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['NombrePostesCree']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.OffreId]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.OffreId">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['OffreId']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.PrenomAr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.PrenomAr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['PrenomAr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.PrenomFr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.PrenomFr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['PrenomFr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.RaisonSociale]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.RaisonSociale">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['RaisonSociale']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.RapprochementId]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.RapprochementId">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['RapprochementId']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.TauxRapprochement]"
-                      dataType="r8"
-                      name="_source.TauxRapprochement">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['TauxRapprochement']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.TypeContratAr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.TypeContratAr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['TypeContratAr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.TypeContratFr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.TypeContratFr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['TypeContratFr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.WilayaAr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.WilayaAr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['WilayaAr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                    <externalMetadataColumn
-                      refId="Package\Tâche de flux de données\JSON Source.Outputs[hits].ExternalColumns[_source.WilayaFr]"
-                      dataType="wstr"
-                      length="100"
-                      name="_source.WilayaFr">
-                      <properties>
-                        <property
-                          dataType="System.String"
-                          description="The id of the parent output of this output."
-                          name="JPath">$['hits']['hits'][n]['_source']['WilayaFr']</property>
-                      </properties>
-                    </externalMetadataColumn>
-                  </externalMetadataColumns>
+                  <externalMetadataColumns />
                 </output>
               </outputs>
             </component>
           </components>
           <paths>
             <path
-              refId="Package\Tâche de flux de données.Paths[hits]"
+              refId="Package\Tâche de flux de données.Paths[Sortie de source OLE DB]"
               endId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0]"
-              name="hits"
-              startId="Package\Tâche de flux de données\JSON Source.Outputs[hits]" />
+              name="Sortie de source OLE DB"
+              startId="Package\Tâche de flux de données\Source OLE DB.Outputs[Sortie de source OLE DB]" />
           </paths>
         </pipeline>
       </DTS:ObjectData>
@@ -1368,53 +1038,47 @@
     design-time-name="Package\Tâche de flux de données">
     <LayoutInfo>
       <GraphLayout
-        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:mssgm="clr-namespace:Microsoft.SqlServer.Graph.Model;assembly=Microsoft.SqlServer.Graph">
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
         <NodeLayout
-          Size="139,42"
-          Id="Package\Tâche de flux de données\JSON Source"
-          TopLeft="421,116" />
+          Size="157,42"
+          Id="Package\Tâche de flux de données\Source OLE DB"
+          TopLeft="451,34" />
         <NodeLayout
-          Size="162,42"
+          Size="166,42"
           Id="Package\Tâche de flux de données\Composant Script"
-          TopLeft="421,268" />
+          TopLeft="440,245" />
         <EdgeLayout
-          Id="Package\Tâche de flux de données.Paths[hits]"
-          TopLeft="490.5,158">
+          Id="Package\Tâche de flux de données.Paths[Sortie de source OLE DB]"
+          TopLeft="526.25,76">
           <EdgeLayout.Curve>
             <mssgle:Curve
               StartConnector="{assembly:Null}"
-              EndConnector="11.5,110"
+              EndConnector="0,169"
               Start="0,0"
-              End="11.5,102.5">
+              End="0,161.5">
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
-                    End="0,51" />
-                  <mssgle:CubicBezierSegment
-                    Point1="0,51"
-                    Point2="0,55"
-                    Point3="4,55" />
-                  <mssgle:LineSegment
-                    End="7.5,55" />
-                  <mssgle:CubicBezierSegment
-                    Point1="7.5,55"
-                    Point2="11.5,55"
-                    Point3="11.5,59" />
-                  <mssgle:LineSegment
-                    End="11.5,102.5" />
+                    End="0,161.5" />
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
           </EdgeLayout.Curve>
           <EdgeLayout.Labels>
-            <mssgm:EdgeLabel
-              BoundingBox="-2.65919921875,60,16.8183984375,9.7294921875"
-              RelativePosition="Any" />
+            <EdgeLabelCollection />
           </EdgeLayout.Labels>
         </EdgeLayout>
       </GraphLayout>
     </LayoutInfo>
   </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\Tâche de flux de données\Source OLE DB">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
 </Objects>]]></DTS:DesignTimeProperties>
 </DTS:Executable>
