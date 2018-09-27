@@ -11,8 +11,8 @@
   DTS:LocaleID="1036"
   DTS:ObjectName="Package"
   DTS:PackageType="5"
-  DTS:VersionBuild="8"
-  DTS:VersionGUID="{C0C0995A-CC3B-4D63-A277-56CC324BEBE3}">
+  DTS:VersionBuild="9"
+  DTS:VersionGUID="{8A84E802-C28B-442E-99E1-084FA2E25D67}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -43,6 +43,266 @@
         <pipeline
           version="1">
           <components>
+            <component
+              refId="Package\Tâche de flux de données\Composant Script"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Inclut et exécute un code de script personnalisé. Par exemple, appliquez une règle d'entreprise qui limite la plage des valeurs valides dans une colonne « revenus » ou ajoutez des valeurs dans deux colonnes et calculez la moyenne de la somme.;Microsoft Corporation; Microsoft SQL Server; Microsoft Corporation; Tous droits réservés; http://www.microsoft.com/sql/support;11"
+              description="Inclut et exécute un code de script personnalisé. Par exemple, appliquez une règle d'entreprise qui limite la plage des valeurs valides dans une colonne « revenus » ou ajoutez des valeurs dans deux colonnes et calculez la moyenne de la somme."
+              name="Composant Script"
+              version="11">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="Stocke le code source du composant"
+                  isArray="true"
+                  name="SourceCode"
+                  state="cdata">
+                  <arrayElements
+                    arrayElementCount="0" />
+                </property>
+                <property
+                  dataType="System.String"
+                  description="Stocke la représentation binaire du composant"
+                  isArray="true"
+                  name="BinaryCode"
+                  state="cdata">
+                  <arrayElements
+                    arrayElementCount="0" />
+                </property>
+                <property
+                  dataType="System.String"
+                  description="Spécifie le nom du projet Microsoft Visual Studio Tools for Applications. Les noms des projets doivent être uniques dans un package."
+                  name="VSTAProjectName"
+                  typeConverter="NOTBROWSABLE">SC_a3bdd98ee9314166b0e4110bb84467c2</property>
+                <property
+                  dataType="System.String"
+                  description="Spécifie le langage de programmation utilisé par le script."
+                  name="ScriptLanguage"
+                  typeConverter="Microsoft.SqlServer.VSTAHosting.ScriptingLanguages">CSharp</property>
+                <property
+                  dataType="System.String"
+                  description="Spécifie une liste séparée par des virgules de variables en lecture seule."
+                  name="ReadOnlyVariables"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ScriptUIVariablePickerDlg"></property>
+                <property
+                  dataType="System.String"
+                  description="Spécifie une liste séparée par des virgules de variables en lecture/écriture."
+                  name="ReadWriteVariables"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ScriptUIWriteableVariablePickerDlg"></property>
+                <property
+                  dataType="System.String"
+                  description="Liste des points d'arrêt présents dans le script."
+                  isArray="true"
+                  name="BreakpointCollection"
+                  typeConverter="NOTBROWSABLE">
+                  <arrayElements
+                    arrayElementCount="0" />
+                </property>
+                <property
+                  dataType="System.String"
+                  description="Somme de contrôle pour faire correspondre les métadonnées de composant avec les codes compilés."
+                  name="MetadataChecksum140"
+                  typeConverter="NOTBROWSABLE"></property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.ScriptComponentHost</property>
+              </properties>
+              <inputs>
+                <input
+                  refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0]"
+                  hasSideEffects="true"
+                  name="Entrée 0">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.CategorieContratAr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.CategorieContratAr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CategorieContratAr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.CategorieContratFr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.CategorieContratFr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CategorieContratFr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.CommuneAr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.CommuneAr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CommuneAr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.CommuneFr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.CommuneFr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.CommuneFr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.DateInscription]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.DateInscription"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DateInscription]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.DemandeurId]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.DemandeurId"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DemandeurId]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.DispositifAr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.DispositifAr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DispositifAr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.DispositifFr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.DispositifFr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.DispositifFr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.Email]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.Email"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.Email]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.Experience]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.Experience"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.Experience]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.MetierAr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.MetierAr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.MetierAr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.MetierFr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.MetierFr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.MetierFr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NiveauInstructionAr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.NiveauInstructionAr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauInstructionAr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NiveauInstructionFr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.NiveauInstructionFr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauInstructionFr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NiveauQualificationAr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.NiveauQualificationAr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauQualificationAr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NiveauQualificationFr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.NiveauQualificationFr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NiveauQualificationFr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NomAr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.NomAr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NomAr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NomFr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.NomFr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NomFr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NombreCandidats]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.NombreCandidats"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NombreCandidats]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NombrePlacesLibres]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.NombrePlacesLibres"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NombrePlacesLibres]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.NombrePostesCree]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.NombrePostesCree"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.NombrePostesCree]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.OffreId]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.OffreId"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.OffreId]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.PrenomAr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.PrenomAr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.PrenomAr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.PrenomFr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.PrenomFr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.PrenomFr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.RaisonSociale]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.RaisonSociale"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.RaisonSociale]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.RapprochementId]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.RapprochementId"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.RapprochementId]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.TauxRapprochement]"
+                      cachedDataType="r8"
+                      cachedName="_source.TauxRapprochement"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.TauxRapprochement]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.TypeContratAr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.TypeContratAr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.TypeContratAr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.TypeContratFr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.TypeContratFr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.TypeContratFr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.WilayaAr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.WilayaAr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.WilayaAr]" />
+                    <inputColumn
+                      refId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0].Columns[_source.WilayaFr]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="_source.WilayaFr"
+                      lineageId="Package\Tâche de flux de données\JSON Source.Outputs[hits].Columns[_source.WilayaFr]" />
+                  </inputColumns>
+                  <externalMetadataColumns />
+                </input>
+              </inputs>
+            </component>
             <component
               refId="Package\Tâche de flux de données\JSON Source"
               componentClassID="Microsoft.ManagedComponentHost"
@@ -77,7 +337,7 @@
                   dataType="System.String"
                   description="The body of the HTTP request."
                   expressionType="Notify"
-                  name="RequestBody">{"IsExpression":false,"Value":"{\r\n  \"size\": 2,\r\n  \"sort\": [\r\n    {\r\n      \"TauxRapprochement\": {\r\n        \"order\": \"desc\"\r\n      }\r\n    }\r\n  ], \r\n  \"query\": {\r\n    \"bool\": {\r\n      \"filter\": {\r\n        \"bool\": {\r\n          \"must\" : [ \r\n              {\"term\" : {\"DemandeurId\": \"b0b0ec62-3b51-4b13-b5d1-a8ffce16d6a9\"}},\r\n              {\"range\" : {\"TauxRapprochement\" : {\"gte\" : 50}}\r\n            }]\r\n        }\r\n      }\r\n    }\r\n  }\r\n}"}</property>
+                  name="RequestBody">{"IsExpression":false,"Value":"{\r\n  \"size\": 2,\r\n  \"sort\": [\r\n    {\r\n      \"TauxRapprochement\": {\r\n        \"order\": \"desc\"\r\n      }\r\n    }\r\n  ], \r\n  \"query\": {\r\n    \"bool\": {\r\n      \"filter\": {\r\n        \"bool\": {\r\n          \"must\" : [ \r\n              {\"term\" : {\"DemandeurId\": \"1995a87f-63f0-4309-a65e-e80756f8602a\"}},\r\n              {\"range\" : {\"TauxRapprochement\" : {\"gte\" : 50}}\r\n            }]\r\n        }\r\n      }\r\n    }\r\n  }\r\n}"}</property>
                 <property
                   dataType="System.String"
                   description="The headers that will be used in the request."
@@ -1074,6 +1334,13 @@
               </outputs>
             </component>
           </components>
+          <paths>
+            <path
+              refId="Package\Tâche de flux de données.Paths[hits]"
+              endId="Package\Tâche de flux de données\Composant Script.Inputs[Entrée 0]"
+              name="hits"
+              startId="Package\Tâche de flux de données\JSON Source.Outputs[hits]" />
+          </paths>
         </pipeline>
       </DTS:ObjectData>
     </DTS:Executable>
@@ -1101,11 +1368,51 @@
     design-time-name="Package\Tâche de flux de données">
     <LayoutInfo>
       <GraphLayout
-        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph">
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:mssgm="clr-namespace:Microsoft.SqlServer.Graph.Model;assembly=Microsoft.SqlServer.Graph">
         <NodeLayout
-          Size="146,42"
+          Size="139,42"
           Id="Package\Tâche de flux de données\JSON Source"
-          TopLeft="411,91" />
+          TopLeft="421,116" />
+        <NodeLayout
+          Size="162,42"
+          Id="Package\Tâche de flux de données\Composant Script"
+          TopLeft="421,268" />
+        <EdgeLayout
+          Id="Package\Tâche de flux de données.Paths[hits]"
+          TopLeft="490.5,158">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="11.5,110"
+              Start="0,0"
+              End="11.5,102.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,51" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,51"
+                    Point2="0,55"
+                    Point3="4,55" />
+                  <mssgle:LineSegment
+                    End="7.5,55" />
+                  <mssgle:CubicBezierSegment
+                    Point1="7.5,55"
+                    Point2="11.5,55"
+                    Point3="11.5,59" />
+                  <mssgle:LineSegment
+                    End="11.5,102.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-2.65919921875,60,16.8183984375,9.7294921875"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
       </GraphLayout>
     </LayoutInfo>
   </TaskHost>
