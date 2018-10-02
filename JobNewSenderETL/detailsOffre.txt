@@ -1,0 +1,30 @@
+﻿<tr>
+  <td class="two-column" style="border-collapse:collapse;border-radius:30px;background-color:#fff;background-clip:content-box;text-align:center;font-size:0;" >
+    <div class="inner" style="text-align:left;padding-top:5px;padding-bottom:5px;padding-right:10px;padding-left:10px;" ><p class="h2" style="Margin:0;color:#0D6CB0;font-size:18px;font-weight:bold;padding-top:10px;padding-bottom:10px;padding-right:0;padding-left:10px;" >[titre]</div>
+    <div class="column" style="width:100%;max-width:300px;display:inline-block;vertical-align:top;" >
+      <table width="100%">
+        <tr>
+          <td class="inner contents" style="border-collapse:collapse;padding-top:5px;padding-bottom:5px;padding-right:10px;padding-left:10px;width:100%;font-size:14px;text-align:left;" >
+            <p style="color:#777;padding-bottom:5px;padding-left:10px;Margin:0;" >[nb_poste] poste(s)</p>
+            <p style="color:#777;padding-bottom:5px;padding-left:10px;Margin:0;" >Niveau d'étude [niveau]</p>
+            <p style="color:#777;padding-bottom:5px;padding-left:10px;Margin:0;" >[experience] année(s) d'expérience</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div class="column" style="width:100%;max-width:300px;display:inline-block;vertical-align:top;" >
+      <table width="100%">
+        <tr>
+          <td class="inner contents" style="border-collapse:collapse;padding-top:5px;padding-bottom:5px;padding-right:10px;padding-left:10px;width:100%;font-size:14px;text-align:left;" >
+            <p style="color:#777;padding-bottom:5px;padding-left:10px;Margin:0;" >Employeur [entreprise]</p>
+            <p style="color:#777;padding-bottom:5px;padding-left:10px;Margin:0;" >Basé à [commune] - [wilaya]</p>
+            <p style="color:#777;padding-bottom:5px;padding-left:10px;Margin:0;" >Type de contrat [contrat]</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div class="inner" style="padding-top:5px;padding-bottom:5px;padding-right:10px;padding-left:10px;" ><p class="contents" style="text-align:left;padding-top:10px;padding-bottom:10px;padding-right:0;padding-left:12px;color:#777;Margin:0;width:100%;font-size:14px;" >Publié le [date]</div>
+    <div class="inner contents" style="text-align:center;padding-top:10px;padding-bottom:20px;padding-right:0;padding-left:0;width:100%;font-size:14px;" ><p style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;color:#777;Margin:0;" ><a class="detail" href="#" style="padding-top:8px;padding-bottom:8px;padding-right:12px;padding-left:12px;border-width:1px;border-style:solid;border-color:#777;border-radius:10px;color:#777;text-decoration:none;" >Plus de détail</a></p></div>
+  </td>
+</tr>
+[offre]
